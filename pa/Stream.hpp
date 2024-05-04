@@ -129,15 +129,13 @@ namespace pa
 		 * This parameter is not constrained to a specific range, however
 		 * high performance applications will want to match this parameter
 		 * to the framesPerBuffer parameter used when opening the stream.
-		 *
-		 * @retval `paNoError` on success;
-		 *
-		 * @retval `paOutputUnderflowed` if additional output data was inserted
-		 * after the previous call and before this call.
+		 * 
+		 * @throws `pa::Error` if `Pa_WriteStream` returns a non-zero value
 		 */
-		PaError write(const void *const buffer, const size_t frames) noexcept
+		void write(const void *const buffer, const size_t frames)
 		{
-			return Pa_WriteStream(_stream, buffer, frames);
+			if (const auto rc = Pa_WriteStream(_stream, buffer, frames))
+				throw Error("Pa_WriteStream", rc);
 		}
 	};
 }
