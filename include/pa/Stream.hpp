@@ -9,7 +9,7 @@ namespace pa
 {
 	class Stream
 	{
-		PaStream *_stream;
+		PaStream *_s;
 
 	public:
 		/**
@@ -25,7 +25,7 @@ namespace pa
 			PaStreamCallback *streamCallback = NULL,
 			void *userData = NULL)
 		{
-			if (const auto rc = Pa_OpenDefaultStream(&_stream, numInputChannels, numOutputChannels, sampleFormat, sampleRate, framesPerBuffer, streamCallback, userData))
+			if (const auto rc = Pa_OpenDefaultStream(&_s, numInputChannels, numOutputChannels, sampleFormat, sampleRate, framesPerBuffer, streamCallback, userData))
 				throw Error("Pa_OpenDefaultStream", rc);
 		}
 
@@ -42,16 +42,15 @@ namespace pa
 			PaStreamCallback *streamCallback = NULL,
 			void *userData = NULL)
 		{
-			if (const auto rc = Pa_OpenStream(&_stream, inputParameters, outputParameters, sampleRate, framesPerBuffer, streamFlags, streamCallback, userData))
+			if (const auto rc = Pa_OpenStream(&_s, inputParameters, outputParameters, sampleRate, framesPerBuffer, streamFlags, streamCallback, userData))
 				throw Error("Pa_OpenStream", rc);
 		}
 
 		~Stream()
 		{
-			if (!_stream)
-				// _stream will only be NULL if it was moved to another `pa::Stream`
+			if (!_s)
 				return;
-			if (const auto rc = Pa_CloseStream(_stream))
+			if (const auto rc = Pa_CloseStream(_s))
 				std::cerr << "Pa_CloseStream: " << Pa_GetErrorText(rc) << '\n';
 		}
 
@@ -68,8 +67,8 @@ namespace pa
 			this->~Stream();
 
 			// take `other`'s stream, making sure its destructor call won't error
-			_stream = other._stream;
-			other._stream = nullptr;
+			_s = other._s;
+			other._s = nullptr;
 		}
 
 		// Move assignment operator
@@ -79,8 +78,8 @@ namespace pa
 			this->~Stream();
 
 			// take `other`'s stream, making sure its destructor call won't error
-			_stream = other._stream;
-			other._stream = nullptr;
+			_s = other._s;
+			other._s = nullptr;
 
 			return *this;
 		}
@@ -91,7 +90,7 @@ namespace pa
 		 */
 		void start()
 		{
-			if (const auto rc = Pa_StartStream(_stream))
+			if (const auto rc = Pa_StartStream(_s))
 				throw Error("Pa_StartStream", rc);
 		}
 
@@ -101,7 +100,7 @@ namespace pa
 		 */
 		void stop()
 		{
-			if (const auto rc = Pa_StopStream(_stream))
+			if (const auto rc = Pa_StopStream(_s))
 				throw Error("Pa_StopStream", rc);
 		}
 
@@ -111,7 +110,7 @@ namespace pa
 		 */
 		void abort()
 		{
-			if (const auto rc = Pa_AbortStream(_stream))
+			if (const auto rc = Pa_AbortStream(_s))
 				throw Error("Pa_AbortStream", rc);
 		}
 
@@ -134,7 +133,7 @@ namespace pa
 		 */
 		void write(const void *const buffer, const size_t frames)
 		{
-			if (const auto rc = Pa_WriteStream(_stream, buffer, frames))
+			if (const auto rc = Pa_WriteStream(_s, buffer, frames))
 				throw Error("Pa_WriteStream", rc);
 		}
 	};
