@@ -11,15 +11,15 @@ namespace pa
  * RAII wrapper over `Pa_Initialize` and `Pa_Terminate`.
  * You must own an instance of `PortAudio` before doing anything else with the library.
  */
-struct PortAudio
+struct Init
 {
-	PortAudio()
+	Init()
 	{
 		if (const auto rc = Pa_Initialize())
-			throw Error("Pa_Initialize", rc);
+			throw Error{"Pa_Initialize", rc};
 	}
 
-	~PortAudio()
+	~Init()
 	{
 		if (const auto rc = Pa_Terminate())
 			std::cerr << "Pa_Terminate: " << Pa_GetErrorText(rc) << '\n';
@@ -28,10 +28,10 @@ struct PortAudio
 	// The library should only be initialized once.
 	// It does not make sense to copy or move a `PortAudio` instance.
 
-	PortAudio(const PortAudio &) = delete;
-	PortAudio &operator=(const PortAudio &) = delete;
-	PortAudio(PortAudio &&) = delete;
-	PortAudio &operator=(PortAudio &&) = delete;
+	Init(const Init &) = delete;
+	Init &operator=(const Init &) = delete;
+	Init(Init &&) = delete;
+	Init &operator=(Init &&) = delete;
 };
 
 }; // namespace pa

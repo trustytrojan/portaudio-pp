@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Error.hpp"
-#include <iostream>
 
 #include <portaudio.h>
 
@@ -10,7 +9,7 @@ namespace pa
 
 class Stream
 {
-	PaStream *_s;
+	PaStream *_s{};
 
 public:
 	/**
@@ -28,7 +27,7 @@ public:
 	{
 		if (const auto rc =
 				Pa_OpenDefaultStream(&_s, numInputChannels, numOutputChannels, sampleFormat, sampleRate, framesPerBuffer, streamCallback, userData))
-			throw Error("Pa_OpenDefaultStream", rc);
+			throw Error{"Pa_OpenDefaultStream", rc};
 	}
 
 	/**
@@ -45,15 +44,15 @@ public:
 		void *userData = nullptr)
 	{
 		if (const auto rc = Pa_OpenStream(&_s, inputParameters, outputParameters, sampleRate, framesPerBuffer, streamFlags, streamCallback, userData))
-			throw Error("Pa_OpenStream", rc);
+			throw Error{"Pa_OpenStream", rc};
 	}
 
-	~Stream()
+	~Stream() noexcept(false)
 	{
 		if (!_s)
 			return;
 		if (const auto rc = Pa_CloseStream(_s))
-			std::cerr << "Pa_CloseStream: " << Pa_GetErrorText(rc) << '\n';
+			throw Error{"Pa_CloseStream", rc};
 	}
 
 	// Delete copy constructor
@@ -63,19 +62,28 @@ public:
 	Stream &operator=(const Stream &) = delete;
 
 	// Move constructor
-	Stream(Stream &&other)
+	Stream(Stream &&other) noexcept
+		: _s{other._s}
 	{
-		this->~Stream();
-		_s = other._s;
 		other._s = nullptr;
 	}
 
 	// Move assignment operator
-	Stream &operator=(Stream &&other)
+	Stream &operator=(Stream &&other) noexcept
 	{
-		this->~Stream();
-		_s = other._s;
-		other._s = nullptr;
+		if (this != &other)
+		{
+			if (_s)
+			{
+				// Best effort to close the stream, ignoring errors as we are in a noexcept function.
+				if (Pa_IsStreamActive(_s) > 0)
+					Pa_AbortStream(_s);
+				Pa_CloseStream(_s);
+			}
+
+			_s = other._s;
+			other._s = nullptr;
+		}
 		return *this;
 	}
 
@@ -86,17 +94,17 @@ public:
 	void start()
 	{
 		if (const auto rc = Pa_StartStream(_s))
-			throw Error("Pa_StartStream", rc);
+			throw Error{"Pa_StartStream", rc};
 	}
 
 	/**
 	 * Wrapper over `Pa_StopStream`.
-	 * @throws `pa::Error` if `Pa_StopStream` fails
+	 * @throws `pa::Error` if `Pa_StopStream` fails, except for when `paStreamIsStopped` is returned
 	 */
 	void stop()
 	{
-		if (const auto rc = Pa_StopStream(_s))
-			throw Error("Pa_StopStream", rc);
+		if (const auto rc = Pa_StopStream(_s); rc && rc != paStreamIsStopped)
+			throw Error{"Pa_StopStream", rc};
 	}
 
 	/**
@@ -106,7 +114,7 @@ public:
 	void abort()
 	{
 		if (const auto rc = Pa_AbortStream(_s))
-			throw Error("Pa_AbortStream", rc);
+			throw Error{"Pa_AbortStream", rc};
 	}
 
 	/**
@@ -129,7 +137,7 @@ public:
 	void write(const void *const buffer, const size_t frames)
 	{
 		if (const auto rc = Pa_WriteStream(_s, buffer, frames))
-			throw Error("Pa_WriteStream", rc);
+			throw Error{"Pa_WriteStream", rc};
 	}
 };
 
