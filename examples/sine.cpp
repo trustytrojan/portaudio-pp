@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <portaudio.hpp>
@@ -54,15 +55,16 @@ int main(int argc, char *argv[])
 		data.phase_step = 2.0 * M_PI * data.sine_freq / SAMPLE_RATE;
 
 		pa::Init init;
-
 		pa::Stream stream(0, 2, paFloat32, SAMPLE_RATE, FRAMES_PER_BUFFER, patestCallback, &data);
-
+		assert(stream.is_stopped());
 		stream.start();
+		assert(stream.is_active());
 
 		std::cout << "Playing a sine wave of " << data.sine_freq << " Hz. Press Enter to stop." << std::endl;
 		std::cin.get();
 
 		stream.stop();
+		assert(stream.is_stopped());
 	}
 	catch (const pa::Error &e)
 	{

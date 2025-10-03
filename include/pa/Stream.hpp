@@ -138,6 +138,22 @@ public:
 		if (const auto rc = Pa_WriteStream(_s, buffer, frames))
 			throw Error{"Pa_WriteStream", rc};
 	}
+
+	bool is_active() const
+	{
+		const auto rc = Pa_IsStreamActive(_s);
+		if (rc < 0)
+			throw Error{"Pa_IsStreamActive", rc};
+		return rc;
+	}
+
+	bool is_stopped() const
+	{
+		const auto rc = Pa_IsStreamStopped(_s);
+		if (rc < 0)
+			throw Error{"Pa_IsStreamStopped", rc};
+		return rc;
+	}
 };
 
 } // namespace pa
